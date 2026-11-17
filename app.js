@@ -1,8 +1,25 @@
-// Stan ulubionych map zapisywany w localStorage
+// LocalStorage favorites state
 let favorites = JSON.parse(localStorage.getItem('game_favorites')) || [];
-let showFavoritesOnly = false;
 
-// Inicjalizacja stanu gwiazdek przy ładowaniu strony
+// Sort cards automatically: favorites pinned to the top
+function sortMaps() {
+    const grid = document.getElementById('mapsGrid');
+    const cards = Array.from(grid.querySelectorAll('.map-card'));
+
+    cards.sort((a, b) => {
+        const aFav = favorites.includes(a.getAttribute('data-id'));
+        const bFav = favorites.includes(b.getAttribute('data-id'));
+
+        if (aFav !== bFav) {
+            return aFav ? -1 : 1;
+        }
+        return Number(a.getAttribute('data-order')) - Number(b.getAttribute('data-order'));
+    });
+
+    cards.forEach(card => grid.appendChild(card));
+}
+
+// Initialize stars and layout order on load
 window.addEventListener('DOMContentLoaded', () => {
     favorites.forEach(mapId => {
         const icon = document.getElementById(`fav-icon-${mapId}`);
@@ -11,9 +28,10 @@ window.addEventListener('DOMContentLoaded', () => {
             icon.classList.add('fa-solid', 'text-amber-400');
         }
     });
+    sortMaps();
 });
 
-// Funkcja filtrowania map przez duży pasek wyszukiwania
+// Search filter logic
 function filterMaps() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const cards = document.querySelectorAll('.map-card');
@@ -21,13 +39,8 @@ function filterMaps() {
 
     cards.forEach(card => {
         const mapName = card.getAttribute('data-name').toLowerCase();
-        const mapId = card.getAttribute('data-id');
-        const isFav = favorites.includes(mapId);
 
-        const matchesQuery = mapName.includes(query);
-        const matchesFavFilter = !showFavoritesOnly || isFav;
-
-        if (matchesQuery && matchesFavFilter) {
+        if (mapName.includes(query)) {
             card.style.display = 'flex';
             visibleCount++;
         } else {
@@ -45,9 +58,9 @@ function filterMaps() {
     }
 }
 
-// Obsługa kliknięcia w gwiazdkę ulubionych
+// Toggle favorite status
 function toggleFavorite(event, mapId) {
-    event.stopPropagation(); // Zapobiega uruchomieniu otwarcia mapy przy kliknięciu w gwiazdkę
+    event.stopPropagation(); // Prevents triggering card click
     const icon = document.getElementById(`fav-icon-${mapId}`);
     
     const index = favorites.indexOf(mapId);
@@ -55,47 +68,35 @@ function toggleFavorite(event, mapId) {
         favorites.splice(index, 1);
         icon.classList.remove('fa-solid', 'text-amber-400');
         icon.classList.add('fa-regular');
-        showToast("Usunięto z ulubionych", "fa-star text-slate-400");
+        showToast("Removed from favorites", "fa-star text-slate-400");
     } else {
         favorites.push(mapId);
         icon.classList.remove('fa-regular');
         icon.classList.add('fa-solid', 'text-amber-400');
-        showToast("Dodano do ulubionych", "fa-star text-amber-400");
+        showToast("Pinned to top", "fa-star text-amber-400");
     }
 
     localStorage.setItem('game_favorites', JSON.stringify(favorites));
-    if (showFavoritesOnly) filterMaps();
+    sortMaps();
 }
 
-// Przełącznik widoku samych ulubionych
-function toggleFavoritesFilter() {
-    showFavoritesOnly = !showFavoritesOnly;
-    const btn = document.getElementById('favFilterBtn');
-    if (showFavoritesOnly) {
-        btn.classList.add('bg-indigo-600', 'border-indigo-500', 'text-white');
-        btn.classList.remove('bg-slate-800', 'border-slate-700', 'text-slate-300');
-    } else {
-        btn.classList.remove('bg-indigo-600', 'border-indigo-500', 'text-white');
-        btn.classList.add('bg-slate-800', 'border-slate-700', 'text-slate-300');
-    }
-    filterMaps();
-}
-
-// Uruchomienie wybranej mapy (przejście do gry z parametrem)
+// Launch map handler
 function launchMap(mapId) {
-    showToast(`Ładowanie ${mapId === 'map-1' ? 'Mapy 1' : 'Mapy 2'}...`, "fa-gamepad text-indigo-400");
+    const card = document.querySelector(`.map-card[data-id="${mapId}"]`);
+    const mapTitle = card ? card.querySelector('h3').textContent : mapId;
+    showToast(`Loading ${mapTitle}...`, "fa-gamepad text-indigo-400");
     setTimeout(() => {
-        // Tutaj w przyszłości podepniesz przekierowanie np. do play.html?map=map-1
+        // Future game redirection, e.g.:
         // window.location.href = `play.html?map=${mapId}&edition=original`;
     }, 800);
 }
 
-// Otwarcie ustawień (ikona zębatki)
+// Settings button handler
 function openSettings() {
-    showToast("Panel ustawień w budowie", "fa-gear text-indigo-400");
+    showToast("Settings panel under construction", "fa-gear text-indigo-400");
 }
 
-// Nowoczesne powiadomienie (zastąpienie natywnego alertu)
+// Toast notification helper
 function showToast(message, iconClass = "fa-circle-check text-indigo-400") {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toastMessage');
