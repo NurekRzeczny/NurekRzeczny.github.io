@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Subway Surfers: Miami | Auto-Timer Mod</title>
+
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #111;
+                overflow: hidden;
+            }
+            #custom-timer {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 9999;
+                background: rgba(0, 0, 0, 0.85);
+                color: #00ff88;
+                font-family: monospace;
+                font-size: 26px;
+                font-weight: bold;
+                padding: 10px 16px;
+                border-radius: 8px;
+                border: 2px solid rgba(0, 255, 136, 0.4);
+                pointer-events: none;
+                user-select: none;
+                transition: color 0.2s, border-color 0.2s;
+            }
+            #custom-timer.stopped {
+                color: #ff4757;
+                border-color: rgba(255, 71, 87, 0.5);
+            }
+            #binds-info {
+                position: fixed;
+                bottom: 15px;
+                left: 15px;
+                z-index: 9999;
+                background: rgba(0, 0, 0, 0.65);
+                color: #ccc;
+                font-family: sans-serif;
+                font-size: 13px;
+                padding: 8px 12px;
+                border-radius: 6px;
+                pointer-events: none;
+                user-select: none;
+            }
+        </style>
+
+        <script>
+            window.config = {
+                loader: "unity",
+                debug: false,
+                maxRatio: 16 / 9,
+                minRatio: 9 / 16,
+
+                title: "Subway Surfers: Miami",
+
+                unityVersion: "2019.4.18f1",
+                unityWebglBuildUrl: "Build/Miami/subway_miami_v1.json",
+
+                fileSize: 31,
+                cachedDecompressedFileSizes: {
+                    "subway_miami_v1.wasm.framework.unityweb": 425811,
+                    "subway_miami_v1.asm.framework.unityweb": 444038,
+                    "subway_miami_v1.asm.memory.unityweb": 2703865,
+                    "subway_miami_v1.wasm.code.unityweb": 21971555,
+                    "subway_miami_v1.data.unityweb": 34189276,
+                    "subway_miami_v1.asm.code.unityweb": 55509105,
+                },
+            };
+        </script>
+    </head>
+
+    <body>
+        <div id="custom-timer">00:00.00</div>
+        <div id="binds-info">
+            <b>Sterowanie:</b> WASD / Strzałki | <b>E:</b> Deskorolka | <b>R:</b> Reset Timera
+        </div>
+
+        <script src="master-loader.js"></script>
+
+        <script>
+            // 1. CUSTOM BINDY (WASD + Spacja jako strzałki, E jako podwójna spacja na deskorolkę)
+            const keyMap = {
+                "KeyW": { key: "ArrowUp", code: "ArrowUp", keyCode: 38 },
+                "KeyS": { key: "ArrowDown", code: "ArrowDown", keyCode: 40 },
+                "KeyA": { key: "ArrowLeft", code: "ArrowLeft", keyCode: 37 },
+                "KeyD": { key: "ArrowRight", code: "ArrowRight", keyCode: 39 },
+                "Space": { key: "ArrowUp", code: "ArrowUp", keyCode: 38 }
+            };
+
+            function sendKey(target, type) {
+                const event = new KeyboardEvent(type, {
+                    key: target.key,
+                    code: target.code,
+                    keyCode: target.keyCode,
+                    which: target.keyCode,
+                    bubbles: true
+                });
+                window.dispatchEvent(event);
+                document.dispatchEvent(event);
+            }
+
+            window.addEventListener("keydown", (e) => {
+                if (keyMap[e.code]) {
+                    sendKey(keyMap[e.code], "keydown");
+                }
+                if (e.code === "KeyE") {
+                    const spaceTarget = { key: " ", code: "Space", keyCode: 32 };
+                    sendKey(spaceTarget, "keydown");
+                    setTimeout(() => sendKey(spaceTarget, "keyup"), 40);
+                    setTimeout(() => sendKey(spaceTarget, "keydown"), 80);
+                    setTimeout(() => sendKey(spaceTarget, "keyup"), 120);
+                }
+                if (e.code === "KeyR") {
+                    resetTimer();
+                }
+            });
+
+            window.addEventListener("keyup", (e) => {
+                if (keyMap[e.code]) {
+                    sendKey(keyMap[e.code], "keyup");
+                }
+            });
+
+            // 2. LOGIKA AUTO-TIMERA POŁĄCZONA Z UNITY
+            let startTime = null;
+            let timerInterval = null;
+            let running = false;
+            const timerEl = document.getElementById("custom-timer");
+
+            function updateTimer() {
+                const diff = Date.now() - startTime;
+                const mins = String(Math.floor(diff / 60000)).padStart(2, "0");
+                const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+                const ms = String(Math.floor((diff % 1000) / 10)).padStart(2, "0");
+                timerEl.textContent = `${mins}:${secs}.${ms}`;
+            }
+
+            function startTimer() {
+                if (!running) {
+                    timerEl.classList.remove("stopped");
+                    startTime = Date.now();
+                    timerInterval = setInterval(updateTimer, 30);
+                    running = true;
+                }
+            }
+
+            function stopTimer(reason = "") {
+                if (running) {
+                    clearInterval(timerInterval);
+                    running = false;
+                    timerEl.classList.add("stopped");
+                    if (reason) {
+                        timerEl.textContent += ` (${reason})`;
+                    }
+                }
+            }
+
+            function resetTimer() {
+                clearInterval(timerInterval);
+                running = false;
+                timerEl.classList.remove("stopped");
+                timerEl.textContent = "00:00.00";
+            }
+
+            window.addEventListener("unity-game-start", () => {
+                resetTimer();
+                startTimer();
+            });
+
+            window.addEventListener("unity-game-stop", () => {
+                stopTimer("CRASH/PAUSE");
+            });
+
+            // 3. WYKRYWANIE ZEBRANIA MONETY PO DŹWIĘKU (Web Audio API Hook)
+            // WPISZ TUTAJ DŁUGOŚĆ DŹWIĘKU MONETY ODCZYTANĄ Z KONSOLI F12 (np. 0.4521)
+            let COIN_SOUND_DURATION = 0.5805; 
+
+            const originalAudioStart = AudioBufferSourceNode.prototype.start;
+            AudioBufferSourceNode.prototype.start = function (...args) {
+                if (this.buffer && running) {
+                    const duration = Number(this.buffer.duration.toFixed(4));
+                    
+                    // Wypisuje długość każdego dźwięku w konsoli F12 podczas biegu
+                    console.log("[AUDIO] Odtworzono dźwięk o długości:", duration);
+
+                    // Jeśli ustawiono długość dźwięku monety i pasuje (z tolerancją 0.002s)
+                    if (COIN_SOUND_DURATION > 0 && Math.abs(duration - COIN_SOUND_DURATION) < 0.002) {
+                        stopTimer("COIN!");
+                    }
+                }
+                return originalAudioStart.apply(this, args);
+            };
+        </script>
+    </body>
+</html>
