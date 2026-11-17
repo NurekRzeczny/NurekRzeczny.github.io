@@ -129,7 +129,6 @@
             window.addEventListener("mousemove", (e) => {
                 if (!isDragging) return;
                 
-                // Ograniczenie, aby timer nie uciekł poza ekran
                 const maxLeft = window.innerWidth - timerEl.offsetWidth;
                 const maxTop = window.innerHeight - timerEl.offsetHeight;
                 
@@ -143,7 +142,6 @@
             window.addEventListener("mouseup", () => {
                 if (isDragging) {
                     isDragging = false;
-                    // Zapisanie nowej pozycji
                     localStorage.setItem("customTimerPos", JSON.stringify({
                         left: timerEl.style.left,
                         top: timerEl.style.top
@@ -168,14 +166,11 @@
                 }
             }
 
-            function stopTimer(reason = "") {
+            function stopTimer() {
                 if (running) {
                     clearInterval(timerInterval);
                     running = false;
                     timerEl.classList.add("stopped");
-                    if (reason) {
-                        timerEl.textContent += ` (${reason})`;
-                    }
                 }
             }
 
@@ -192,7 +187,7 @@
             });
 
             window.addEventListener("unity-game-stop", () => {
-                stopTimer("CRASH/PAUSE");
+                stopTimer();
             });
 
             // 3. WYKRYWANIE ZEBRANIA MONETY PO DŹWIĘKU (Web Audio API Hook)
@@ -205,7 +200,7 @@
                     console.log("[AUDIO] Odtworzono dźwięk o długości:", duration);
 
                     if (COIN_SOUND_DURATION > 0 && Math.abs(duration - COIN_SOUND_DURATION) < 0.002) {
-                        stopTimer("COIN!");
+                        stopTimer();
                     }
                 }
                 return originalAudioStart.apply(this, args);
