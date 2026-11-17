@@ -1,7 +1,5 @@
-// LocalStorage favorites state
 let favorites = JSON.parse(localStorage.getItem('game_favorites')) || [];
 
-// Sort cards automatically: favorites pinned to the top
 function sortMaps() {
     const grid = document.getElementById('mapsGrid');
     const cards = Array.from(grid.querySelectorAll('.map-card'));
@@ -19,7 +17,6 @@ function sortMaps() {
     cards.forEach(card => grid.appendChild(card));
 }
 
-// Initialize stars and layout order on load
 window.addEventListener('DOMContentLoaded', () => {
     favorites.forEach(mapId => {
         const icon = document.getElementById(`fav-icon-${mapId}`);
@@ -31,7 +28,6 @@ window.addEventListener('DOMContentLoaded', () => {
     sortMaps();
 });
 
-// Search filter logic
 function filterMaps() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const cards = document.querySelectorAll('.map-card');
@@ -58,9 +54,8 @@ function filterMaps() {
     }
 }
 
-// Toggle favorite status
 function toggleFavorite(event, mapId) {
-    event.stopPropagation(); // Prevents triggering card click
+    event.stopPropagation();
     const icon = document.getElementById(`fav-icon-${mapId}`);
     
     const index = favorites.indexOf(mapId);
@@ -80,31 +75,62 @@ function toggleFavorite(event, mapId) {
     sortMaps();
 }
 
-// Launch map handler z ekranem ładowania i przekierowaniem
-function launchMap(mapId, targetUrl) {
+// System automatycznego sprawdzania aktualizacji przed startem gry
+async function checkAndUpdateGame(mapId, targetUrl) {
+    const folderPath = targetUrl.substring(0, targetUrl.lastIndexOf('/'));
+    const versionFileUrl = `${folderPath}/version.json?t=${Date.now()}`;
+    const localVersionKey = `game_ver_${mapId}`;
+    const savedVersion = localStorage.getItem(localVersionKey) || "0.0.0";
+
+    try {
+        const response = await fetch(versionFileUrl);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.version && data.version !== savedVersion) {
+                console.log(`New version detected for ${mapId}: ${data.version} (Local: ${savedVersion})`);
+                localStorage.setItem(localVersionKey, data.version);
+                
+                // Czyszczenie pamięci podręcznej przeglądarki (Cache API) jeśli jest wspierana
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    for (const key of keys) {
+                        if (key.includes(mapId)) await caches.delete(key);
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.log("Skipping online version check (offline or file missing).");
+    }
+}
+
+// Główna funkcja uruchamiająca mapę z loaderem i auto-update
+async function launchMap(mapId, targetUrl) {
     const card = document.querySelector(`.map-card[data-id="${mapId}"]`);
     const mapTitle = card ? card.querySelector('h3').textContent : mapId;
 
-    // Uruchomienie ekranu ładowania (Loader)
     const loader = document.getElementById('gameLoader');
     const loaderText = document.getElementById('loaderText');
-    loaderText.textContent = `Loading ${mapTitle}...`;
+    loaderText.textContent = `Checking updates for ${mapTitle}...`;
     
     loader.classList.remove('opacity-0', 'pointer-events-none');
     loader.classList.add('opacity-100');
 
-    // Krótkie opóźnienie wizualne loadera i przekierowanie do pliku gry
+    // Sprawdzenie aktualizacji w tle
+    await checkAndUpdateGame(mapId, targetUrl);
+
+    loaderText.textContent = `Loading ${mapTitle}...`;
+
+    // Przejście do gry po krótkiej chwili
     setTimeout(() => {
         window.location.href = targetUrl;
-    }, 600);
+    }, 500);
 }
 
-// Settings button handler
 function openSettings() {
     showToast("Settings panel under construction", "fa-gear text-indigo-400");
 }
 
-// Toast notification helper
 function showToast(message, iconClass = "fa-circle-check text-indigo-400") {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toastMessage');
