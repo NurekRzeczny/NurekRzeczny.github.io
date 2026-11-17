@@ -30,7 +30,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative">
 
-    <!-- EKRAN ŁADOWANIA (LOADER) - DOMYŚLNIE UKRYTY -->
+    <!-- GAME LOADING SCREEN (LOADER) -->
     <div id="gameLoader" class="fixed inset-0 bg-darkBg/95 backdrop-blur-md z-50 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="relative flex items-center justify-center">
             <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
@@ -68,7 +68,7 @@
         <!-- MAPS GRID (2 columns on mobile, 3 columns on desktop) -->
         <div id="mapsGrid" class="w-full grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl">
             
-            <!-- CARD 1: MIAMI (Przekierowanie do subwaysurfers/miami/miami.html) -->
+            <!-- CARD 1: MIAMI -->
             <div class="map-card group relative bg-cardBg rounded-2xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer flex flex-col" data-name="miami" data-id="miami" data-order="1" onclick="launchMap('miami', 'subwaysurfers/miami/miami.html')">
                 <div class="relative w-full h-40 sm:h-52 overflow-hidden bg-gradient-to-br from-slate-800 via-indigo-950 to-slate-900">
                     <img src="assets/miami.png" alt="Miami" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" onerror="this.src='https://placehold.co/600x400/1e293b/ffffff?text=Miami'">
