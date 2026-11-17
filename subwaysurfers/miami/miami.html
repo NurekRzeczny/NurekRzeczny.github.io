@@ -25,9 +25,12 @@
                 padding: 10px 16px;
                 border-radius: 8px;
                 border: 2px solid rgba(0, 255, 136, 0.4);
-                pointer-events: none;
+                cursor: grab;
                 user-select: none;
                 transition: color 0.2s, border-color 0.2s;
+            }
+            #custom-timer:active {
+                cursor: grabbing;
             }
             #custom-timer.stopped {
                 color: #ff4757;
@@ -61,7 +64,7 @@
     </head>
 
     <body>
-        <div id="custom-timer">00:00.00</div>
+        <div id="custom-timer" title="Przeciągnij, aby zmienić pozycję">00:00.00</div>
 
         <script src="master-loader.js"></script>
 
@@ -99,11 +102,54 @@
                 }
             });
 
-            // 2. LOGIKA AUTO-TIMERA POŁĄCZONA Z UNITY
+            // 2. LOGIKA AUTO-TIMERA POŁĄCZONA Z UNITY + PRZECIĄGANIE
             let startTime = null;
             let timerInterval = null;
             let running = false;
             const timerEl = document.getElementById("custom-timer");
+
+            // Wczytanie zapisanej pozycji
+            const savedPos = JSON.parse(localStorage.getItem("customTimerPos"));
+            if (savedPos && savedPos.left && savedPos.top) {
+                timerEl.style.left = savedPos.left;
+                timerEl.style.top = savedPos.top;
+            }
+
+            // Obsługa przeciągania myszką
+            let isDragging = false;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            timerEl.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                offsetX = e.clientX - timerEl.getBoundingClientRect().left;
+                offsetY = e.clientY - timerEl.getBoundingClientRect().top;
+            });
+
+            window.addEventListener("mousemove", (e) => {
+                if (!isDragging) return;
+                
+                // Ograniczenie, aby timer nie uciekł poza ekran
+                const maxLeft = window.innerWidth - timerEl.offsetWidth;
+                const maxTop = window.innerHeight - timerEl.offsetHeight;
+                
+                const newLeft = Math.max(0, Math.min(e.clientX - offsetX, maxLeft));
+                const newTop = Math.max(0, Math.min(e.clientY - offsetY, maxTop));
+
+                timerEl.style.left = newLeft + "px";
+                timerEl.style.top = newTop + "px";
+            });
+
+            window.addEventListener("mouseup", () => {
+                if (isDragging) {
+                    isDragging = false;
+                    // Zapisanie nowej pozycji
+                    localStorage.setItem("customTimerPos", JSON.stringify({
+                        left: timerEl.style.left,
+                        top: timerEl.style.top
+                    }));
+                }
+            });
 
             function updateTimer() {
                 const diff = Date.now() - startTime;
@@ -150,18 +196,14 @@
             });
 
             // 3. WYKRYWANIE ZEBRANIA MONETY PO DŹWIĘKU (Web Audio API Hook)
-            // WPISZ TUTAJ DŁUGOŚĆ DŹWIĘKU MONETY ODCZYTANĄ Z KONSOLI F12 (np. 0.4521)
             let COIN_SOUND_DURATION = 0.5805; 
 
             const originalAudioStart = AudioBufferSourceNode.prototype.start;
             AudioBufferSourceNode.prototype.start = function (...args) {
                 if (this.buffer && running) {
                     const duration = Number(this.buffer.duration.toFixed(4));
-                    
-                    // Wypisuje długość każdego dźwięku w konsoli F12 podczas biegu
                     console.log("[AUDIO] Odtworzono dźwięk o długości:", duration);
 
-                    // Jeśli ustawiono długość dźwięku monety i pasuje (z tolerancją 0.002s)
                     if (COIN_SOUND_DURATION > 0 && Math.abs(duration - COIN_SOUND_DURATION) < 0.002) {
                         stopTimer("COIN!");
                     }
