@@ -33,20 +33,6 @@
                 color: #ff4757;
                 border-color: rgba(255, 71, 87, 0.5);
             }
-            #binds-info {
-                position: fixed;
-                bottom: 15px;
-                left: 15px;
-                z-index: 9999;
-                background: rgba(0, 0, 0, 0.65);
-                color: #ccc;
-                font-family: sans-serif;
-                font-size: 13px;
-                padding: 8px 12px;
-                border-radius: 6px;
-                pointer-events: none;
-                user-select: none;
-            }
         </style>
 
         <script>
@@ -76,14 +62,11 @@
 
     <body>
         <div id="custom-timer">00:00.00</div>
-        <div id="binds-info">
-            <b>Sterowanie:</b> WASD / Strzałki | <b>E:</b> Deskorolka | <b>R:</b> Reset Timera
-        </div>
 
         <script src="master-loader.js"></script>
 
         <script>
-            // 1. CUSTOM BINDY (WASD + Spacja jako strzałki, E jako podwójna spacja na deskorolkę)
+            // 1. CUSTOM BINDY (WASD + Spacja jako strzałki)
             const keyMap = {
                 "KeyW": { key: "ArrowUp", code: "ArrowUp", keyCode: 38 },
                 "KeyS": { key: "ArrowDown", code: "ArrowDown", keyCode: 40 },
@@ -107,16 +90,6 @@
             window.addEventListener("keydown", (e) => {
                 if (keyMap[e.code]) {
                     sendKey(keyMap[e.code], "keydown");
-                }
-                if (e.code === "KeyE") {
-                    const spaceTarget = { key: " ", code: "Space", keyCode: 32 };
-                    sendKey(spaceTarget, "keydown");
-                    setTimeout(() => sendKey(spaceTarget, "keyup"), 40);
-                    setTimeout(() => sendKey(spaceTarget, "keydown"), 80);
-                    setTimeout(() => sendKey(spaceTarget, "keyup"), 120);
-                }
-                if (e.code === "KeyR") {
-                    resetTimer();
                 }
             });
 
