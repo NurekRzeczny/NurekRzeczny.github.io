@@ -80,15 +80,23 @@ function toggleFavorite(event, mapId) {
     sortMaps();
 }
 
-// Launch map handler
-function launchMap(mapId) {
+// Launch map handler z ekranem ładowania i przekierowaniem
+function launchMap(mapId, targetUrl) {
     const card = document.querySelector(`.map-card[data-id="${mapId}"]`);
     const mapTitle = card ? card.querySelector('h3').textContent : mapId;
-    showToast(`Loading ${mapTitle}...`, "fa-gamepad text-indigo-400");
+
+    // Uruchomienie ekranu ładowania (Loader)
+    const loader = document.getElementById('gameLoader');
+    const loaderText = document.getElementById('loaderText');
+    loaderText.textContent = `Loading ${mapTitle}...`;
+    
+    loader.classList.remove('opacity-0', 'pointer-events-none');
+    loader.classList.add('opacity-100');
+
+    // Krótkie opóźnienie wizualne loadera i przekierowanie do pliku gry
     setTimeout(() => {
-        // Future game redirection, e.g.:
-        // window.location.href = `play.html?map=${mapId}&edition=original`;
-    }, 800);
+        window.location.href = targetUrl;
+    }, 600);
 }
 
 // Settings button handler
